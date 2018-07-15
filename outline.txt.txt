@@ -1,0 +1,138 @@
+ nRoom Scheduling Algorithm Overview
+
+Data inputs
+
+Input parameters: 
+Courses:
+Course number
+Course name
+Instructors
+Department
+Course enrollment
+Course Capacity
+Course type (Lab or non lab)
+Planned meeting days
+These are days for which the course is intended to be taught. If this is set as MW, the course must be taught on Monday and Wednesday. This is a hard constraint. If this is given as a number (i.e 2), this indicates that the course must be taught for two days (either Monday Wednesday, or Tuesday - Thursday). If given as 3 (course must be taught on Monday - Wednesday - Friday). If given as 1, course can meet on any day. 
+Start time - End time 
+This is an integer (1-5), which specifies how many hours a course meets. 
+Optional, sometimes there will be courses will specific times already set. If so, treat these times as unchangeable
+Start and end dates
+This is the start date and end date of the class. For example, this could be 1/16/18 - 5/16/18. This is important because some classes might meet only half a term, creating an empty room during the other half
+Set of room preferences
+Each room preference has its own weight (0-100) ->boundaries of weights are described in more detail below
+Set of facility preferences
+Each facility (projector, screen, speaker, mic…) has its own weight (0-100)
+Events (set events in the schedule, such as a speaker or a conference)
+Meeting day
+Meeting Time
+Meeting Location
+Set of facility preferences (can be set as a hard constraint) This information is important for suggesting alternatives
+Rooms:
+Room capacity (max number of students that can fit in the room)
+Making sure course capacity does not exceed room capacity is a hard constraint
+Room Type
+There are three options for room types: lab, lecture, seminar
+Room Features
+This is an array which lists all room features. Example: [Whiteboard, projector]
+Building
+
+
+Preferences from instructors (these preferences will be for each course they are teaching): 
+Time Preferences:
+These preferences will contain both days and times, represented as numbers
+An example preference will be (Monday: 900-1300). 
+There will be two types of time preferences, preferred times and time conflicts. If the preference (Monday: 900-1300) is a preferred time, this is treated as a time the professor wants to teach. If it a conflict time, it is treated as a time the professor can't teach. 
+Preferred times can be considered soft constraints, conflict times should be considered hard constraints. (Often conflict times are given when a professor is off campus, and can not possibly teach a class) . 
+These two preferences will be given in separate columns of the data set. If a time preference doesn’t exist, it will be given as an empty cell in the dataset
+If the preferred time preference is only given as a single day (i.e. Monday: 900-1100), and the course is required to meet two days a week, then to satisfy the preference, you only have to ensure that one of the course times is on Monday between 900-1100.
+Room preferences
+These preferences can be a single room, and/or a room type. 
+Room type, what room type a professor wants. 
+Room feature, this is a list of features that is wanted in the room. 
+Back to back classes
+This is a preference that states whether a professor wants to teach courses back to back, one after the other, or not. This will be represented as a binary (1 = yes, 0 = no). This is a soft constraint
+Admin Preferences
+Turn over time (default to be 10 minutes): the minimum time between two consecutive events
+Margin of error for filling room capacity. If a class capacity is 20 students, and the margin for error is set at 25%, then this class can be put in a room with a capacity of 15
+Minimum space utility percentage. This states for each class that gets placed in the room, what is the minimum ratio between class capacity and room capacity. If this is set at 10%, you can have a class with 10 people in a room for 100 people. But a class with 5 people will not be allowed in a room with 100 people. 
+Department 
+Department owned buildings/rooms
+If a list of department owned buildings/rooms is provided, a course must be placed in those rooms before other rooms. 
+There should be a flag to make it so that a department can say they only want courses in their department owned rooms, and if a room is not available, don’t place that course in the schedule
+
+Additional hard constraints:
+
+The hard constraints that must be fulfilled are as follows:
+Rooms must not be double booked in the same time period. 
+Rooms must be big enough to hold the class. 
+Rooms must be of the appropriate type
+Professor must not teach two different classes in the same time 
+Professor must not have a class in a time he/she is unavailable in i.e. a conflict time
+Any other soft constraint with weight 100 is also considered a hard constraint
+
+
+Weights
+
+All of the following preferences must have a weight (0-100) associated with it. A weight of 0 means this preference can be completely ignored. A weight of 100 means it is a hard constraint, which means the schedule assignment have to satisfy that preference, or not place the section in the schedule. For example, if professor A is teaching section 01 of Economics, and he has to teach in Room 112 (with the weight for his room preference set to 100), the output will either return a schedule with Section 01 of Economics in Room 112, or with Section 01 of economics not contained within the schedule. 
+
+What we expect the algorithm to do. 
+
+High level: 
+
+Return a schedule for each room, a schedule for each course, a schedule for each instructor, a list of courses whose hard constraints were not met, and the reason why it was rejected from a classroom (time conflict with another course or event)
+
+
+Details: 
+
+Given a dataset with these items, we want an algorithm that satisfies all hard constraints and optimizes all soft constraints. There must be a guarantee that the hard constraints listed above will not be violated for any schedule. 
+
+For a course that meets on multiple days, the meeting time must be the same across all days, unless the course already has preset times that are not the same across all meeting days (For example, if in the input data, there is a course which times set to Monday: 10AM - Wednesday, 11AM. In this case, you have to keep this course as given
+
+Additionally, the schedule needs to have a balanced output, in that the majority of courses are not to be taught just on Mondays and Wednesdays, but are spread out across the week. This translates to making sure roughly no more than 70% of classes are offering during a single day. 
+Additionally, this threshold must be variable when running the algorithm. 
+On top of that, there needs to be balance in the time offerings for each day. No more than 70% of courses can be between 10AM - 3PM. This threshold must be variable as well. 
+Additionally, there should be a way to set a threshold for any time range. As in, we should be able to say (No more than 10% of courses between 4PM and 5PM), with a 2% margin of error - and the output schedule will satisfy this. 
+
+The output of the algorithm should also provide meta-data analytics that say:
+% of courses for which preferences exactly matched
+% of courses for which preferences were not fully matched (and which preferences were not matched)
+Number of courses whose hard constraints cannot be met
+% of courses on each day of the week
+% of courses before 10AM
+% of courses between 10AM - 3PM
+% of courses after 3PM
+% space utilization = ?(course or event enrollment/room capacity)
+
+There needs to be a process that outputs any conflicts in the schedule, and possible options for resolving those conflicts. A conflict is when a hard cannot be satisfied. 
+For an example of a conflict due to a soft constraint, imagine if class A is in Room 1 at 10AM -12. But professor Jenkins wants class B to be in the same room at the same time, so there should be an output which lists possible options for class B. 
+
+For any conflict that may arise, there should be output which lists potential options for resolving that conflict. This output can contain available rooms during a specific time, or available times for a specific room. 
+
+If there is a hard constraint conflict that cannot be resolved without violating another hard constraint, then the output should read, “This class cannot be placed in the schedule”. 
+
+Additionally, there should be a text output for each professor that lists what courses they are teaching, what times, and what rooms. Lastly, for each section, this output should state if there preferences were met, and if they were not met, what was the reason. 
+
+For example
+
+Professor H
+
+ECON 101 - Monday, Wednesday: 12:20-1:45 - Room 112
+Your preference for this course being taught between 10:00AM and 2:00PM has been met
+
+ECON 102 - Tuesday, Thursday: 12:20-1:45 - Room 222
+Your preference for this course being taught in Room 108 was not met. This is because we had to place Professor H’s ECON 117 course in Room 108 because he is teaching back to back courses. 
+
+
+What if scenarios - Schedulers want to know if certain rooms are blocked off, how will that affect the schedule. We want the ability to remove groups of rooms, rerun the algorithm, and compare all the meta-data analytics for both versions of the schedule.
+
+Additionally, as an output for the algorithm, we want data visualizations (i.e. graphs) for all the meta-data analytics. All these graphs should be able displayed in an html page, and also exportable into a pdf. 
+
+An example of graphs could look like:
+While we won’t be able to show every graph in this example (including the ones about buildings and most requested features, because those items are not in our dataset, use can use this as inspiration for how to display data for all the meta-data analytics. 
+
+
+
+
+
+For the visual displays of data, it would be best if they were displayed using chartist.js (https://gionkunz.github.io/chartist-js/), which would require building out the frontend view in javascript. 
+
